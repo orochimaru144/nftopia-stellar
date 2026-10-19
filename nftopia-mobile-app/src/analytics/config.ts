@@ -96,6 +96,13 @@ export const ANALYTICS_EVENTS = {
   COLLECTION_UPDATE: 'collection_update',
   COLLECTION_DELETE: 'collection_delete',
 
+  // Home discovery (category chips, trending carousel, new drops)
+  DISCOVERY_CATEGORY_SELECT: 'discovery_category_select',
+  DISCOVERY_TRENDING_IMPRESSION: 'discovery_trending_impression',
+  DISCOVERY_TRENDING_ITEM_CLICK: 'discovery_trending_item_click',
+  DISCOVERY_NEW_DROPS_IMPRESSION: 'discovery_new_drops_impression',
+  DISCOVERY_NEW_DROPS_ITEM_CLICK: 'discovery_new_drops_item_click',
+
   // Auction actions
   AUCTION_VIEW: 'auction_view',
   AUCTION_CREATE: 'auction_create',
@@ -116,6 +123,10 @@ export const ANALYTICS_EVENTS = {
   LIKE: 'like',
   UNLIKE: 'unlike',
   SHARE: 'share',
+  SHARE_INITIATED: 'share_initiated',
+  SHARE_COMPLETED: 'share_completed',
+  SHARE_CANCELLED: 'share_cancelled',
+  SHARE_FAILED: 'share_failed',
 
   // Wallet
   WALLET_BALANCE_CHECK: 'wallet_balance_check',
@@ -123,6 +134,15 @@ export const ANALYTICS_EVENTS = {
   WALLET_SEND_SUCCESS: 'wallet_send_success',
   WALLET_SEND_FAILURE: 'wallet_send_failure',
   WALLET_RECEIVE: 'wallet_receive',
+  WALLET_CONNECT_PAIRING_INITIATED: 'wallet_connect_pairing_initiated',
+
+  // QR scanner
+  QR_CAMERA_PERMISSION_REQUESTED: 'qr_camera_permission_requested',
+  QR_CAMERA_PERMISSION_GRANTED: 'qr_camera_permission_granted',
+  QR_CAMERA_PERMISSION_DENIED: 'qr_camera_permission_denied',
+  QR_SCAN_SUCCESS: 'qr_scan_success',
+  QR_SCAN_UNRECOGNIZED: 'qr_scan_unrecognized',
+  QR_MANUAL_ENTRY: 'qr_manual_entry',
 
   // Errors
   ERROR_OCCURRED: 'error_occurred',

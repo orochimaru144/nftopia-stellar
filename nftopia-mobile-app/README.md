@@ -27,7 +27,8 @@ NFTopia Mobile App is the React Native surface for onboarding users, creating or
 5. [Project Structure](#-project-structure)
 6. [Authentication and Wallet Layer](#-authentication-and-wallet-layer)
 7. [Testing](#-testing)
-8. [Repository Notes](#-repository-notes)
+8. [Accessibility](#-accessibility)
+9. [Repository Notes](#-repository-notes)
 
 ## 🏗️ Architecture
 
@@ -127,6 +128,15 @@ npm test
 
 There are tests for wallet services, auth services, and auth store behavior in the repository.
 
+## ♿ Accessibility
+
+New and updated screens are expected to follow
+[`docs/ACCESSIBILITY.md`](./docs/ACCESSIBILITY.md) — a short checklist
+covering accessibility labels/roles, touch target sizing, focus order, font
+scaling, and color contrast. See
+[`docs/ACCESSIBILITY_AUDIT.md`](./docs/ACCESSIBILITY_AUDIT.md) for the audit
+findings behind it.
+
 ## 📌 Repository Notes
 
 - Older docs in this workspace mention ArgentX, Braavos, or Starknet terminology. The active wallet service code is built around Stellar.
@@ -135,3 +145,17 @@ There are tests for wallet services, auth services, and auth store behavior in t
   - `NAVIGATION-README.md`
   - `AUTH-NAVIGATION-SETUP.md`
   - `QUICK-NAV-REFERENCE.md`
+### Session renewal
+
+The auth store owns a single refresh timer, scheduled two minutes before access-token
+expiry. Returning to the foreground checks expiry again because mobile platforms can
+suspend timers. `refreshSession()` and `extendSession()` share one in-flight refresh
+request; the marketplace client and Axios interceptor use the same action on a 401
+and retry the original request at most once. Refresh failure clears the session and
+wallet connection and prompts the user to sign in again, without deleting wallet keys.
+
+Wallet auth uses `EXPO_PUBLIC_API_BASE_URL` (including the API prefix), defaulting to
+`http://localhost:3000/api/v1`. The refresh endpoint is `/auth/refresh`, accepts
+`{ refreshToken }`, and returns `{ data: { success: true, data: { access_token,
+refresh_token, user } } }`. Refresh requests are not retried on network failures:
+the backend rotates refresh tokens, so replaying one can revoke the token family.

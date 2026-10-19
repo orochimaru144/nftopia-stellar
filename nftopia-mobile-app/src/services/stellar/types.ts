@@ -2,6 +2,7 @@ export interface Wallet {
   publicKey: string;
   secretKey: string;
   mnemonic?: string;
+  backupConfirmed?: boolean;
 }
 
 export interface WalletCreateResult {
@@ -88,4 +89,5 @@ export enum WalletErrorCode {
   SIGN_ERROR = 'SIGN_ERROR',
   NETWORK_ERROR = 'NETWORK_ERROR',
   TRANSACTION_ERROR = 'TRANSACTION_ERROR',
+  INSUFFICIENT_RESERVE = 'INSUFFICIENT_RESERVE',
 }

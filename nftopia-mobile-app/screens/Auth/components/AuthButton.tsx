@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/lib/haptics';
 
 interface AuthButtonProps {
   title: string;
@@ -21,6 +21,7 @@ interface AuthButtonProps {
   disabled?: boolean;
   loading?: boolean;
   haptic?: boolean;
+  testID?: string;
 }
 
 export default function AuthButton({
@@ -33,12 +34,13 @@ export default function AuthButton({
   disabled = false,
   loading = false,
   haptic = true,
+  testID,
 }: AuthButtonProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     if (haptic) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      haptics.tap();
     }
     Animated.spring(scaleAnim, {
       toValue: 0.95,
@@ -72,6 +74,10 @@ export default function AuthButton({
       onPressOut={handlePressOut}
       activeOpacity={1}
       disabled={isDisabled}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       <Animated.View
         style={[

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { TextInput, TextInputProps } from 'react-native';
+import TextField from '@/components/ui/TextField';
 
-interface FormInputProps {
+export interface FormInputProps {
   label: string;
   placeholder: string;
   value: string;
@@ -15,8 +16,17 @@ interface FormInputProps {
   testID?: string;
   multiline?: boolean;
   numberOfLines?: number;
+  /** Label for the return key (e.g. "next", "done"). */
+  returnKeyType?: TextInputProps['returnKeyType'];
+  /** Called when the user presses the return key. Use for focus chaining. */
+  onSubmitEditing?: () => void;
+  /** Dismiss the keyboard after submit (defaults true for single-line). */
+  blurOnSubmit?: boolean;
+  /** Imperative handle to programmatically focus the input. */
+  inputRef?: React.Ref<TextInput>;
 }
 
+/** Auth-flow text input (#468) — composes the shared TextField base. */
 export default function FormInput({
   label,
   placeholder,
@@ -31,79 +41,30 @@ export default function FormInput({
   testID,
   multiline = false,
   numberOfLines = 1,
+  returnKeyType,
+  onSubmitEditing,
+  blurOnSubmit,
+  inputRef,
 }: FormInputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[
-          styles.input,
-          isFocused ? styles.inputFocused : undefined,
-          error ? styles.inputError : undefined,
-          !editable ? styles.inputDisabled : undefined,
-          multiline ? styles.inputMultiline : undefined,
-        ]}
-        placeholder={placeholder}
-        placeholderTextColor="#999"
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        secureTextEntry={secureTextEntry}
-        autoCapitalize={autoCapitalize}
-        autoCorrect={autoCorrect}
-        editable={editable}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        testID={testID}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-      />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
+    <TextField
+      inputRef={inputRef}
+      label={label}
+      placeholder={placeholder}
+      value={value}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+      secureTextEntry={secureTextEntry}
+      autoCapitalize={autoCapitalize}
+      autoCorrect={autoCorrect}
+      editable={editable}
+      error={error}
+      testID={testID}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      returnKeyType={returnKeyType}
+      onSubmitEditing={onSubmitEditing}
+      blurOnSubmit={blurOnSubmit}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 8,
-    marginBottom: 4,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  input: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    minHeight: 52,
-  },
-  inputFocused: {
-    borderColor: '#007AFF',
-    backgroundColor: '#fff',
-  },
-  inputError: {
-    borderColor: '#FF3B30',
-    backgroundColor: '#FFF5F5',
-  },
-  inputDisabled: {
-    opacity: 0.6,
-    backgroundColor: '#f1f3f5',
-  },
-  inputMultiline: {
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#FF3B30',
-    marginTop: 4,
-  },
-});

@@ -1,26 +1,58 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '@/navigation/MainNavigator';
-import { colors, spacing, borderRadius, shadows } from '@/constants/theme';
-import { useNFTs } from '@/hooks/useNFTs';
-import { NFT } from '@/types';
-import { OptimizedImage } from '@/src/components/OptimizedImage';
-import { ErrorFallback } from '@/src/components/ErrorFallback';
+import { colors, spacing } from '@/constants/theme';
+import { useMarketplaceListings } from '@/hooks/useMarketplaceListings';
+import { useMarketplaceFiltersStore } from '@/stores/marketplaceFiltersStore';
+import type { MarketplaceListingCard as MarketplaceListingCardVM, MarketplaceSortOption } from '@/src/utils/marketplaceViewModels';
+import { getActiveMarketplaceFilterCount } from '@/src/utils/marketplaceViewModels';
 import { withErrorBoundary } from '@/src/hoc/withErrorBoundary';
 import { useAnalytics } from '@/src/hooks/useAnalytics';
 import { usePullToRefresh } from '@/src/hooks/usePullToRefresh';
+import { useListState } from '@/src/hooks/useListState';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { MarketplaceCardSkeleton } from '@/src/components/skeletons';
 import { PullToRefresh } from '@/src/components/PullToRefresh';
 import { ANALYTICS_EVENTS } from '@/src/analytics/config';
 import { analyticsService } from '@/src/analytics/analytics.service';
 import { errorLogger } from '@/src/errors/logger';
+import MarketplaceListingCard from '@/components/ui/MarketplaceListingCard';
+import MarketplaceSearchBar from '@/components/ui/MarketplaceSearchBar';
+import MarketplaceSortBar from '@/components/ui/MarketplaceSortBar';
+import FilterSheet from '@/components/ui/FilterSheet';
+
+const GRID_COLUMNS = 2;
 
 function MarketplaceContent() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
-  const { nfts, loading, error, loadMore, refetch } = useNFTs();
+  const route = useRoute<RouteProp<MainStackParamList, 'Marketplace'>>();
   const { track, trackScreenView, trackPerformance } = useAnalytics();
+
+  const [search, setSearch] = useState('');
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+
+  const filters = useMarketplaceFiltersStore();
+  const { setCategory, setStatus, setPriceRange, setSortBy, clearAll } = filters;
+
+  // A category deep-linked from Home (e.g. tapping a discovery chip) takes
+  // over the persisted filter for this visit; a plain back-navigation into
+  // Marketplace (no param) leaves whatever the user last filtered by alone.
+  useEffect(() => {
+    if (route.params?.category) {
+      setCategory(route.params.category);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params?.category]);
+
+  const { listings, loading, error, loadMore, refetch } = useMarketplaceListings({
+    filters,
+    search: search || undefined,
+  });
 
   const {
     isRefreshing,
@@ -28,7 +60,6 @@ function MarketplaceContent() {
     lastUpdated,
     handleRefresh,
     getLastUpdatedText,
-    isInCooldown,
     cooldownRemaining,
   } = usePullToRefresh({
     onRefresh: async () => {
@@ -40,61 +71,88 @@ function MarketplaceContent() {
     analyticsEvent: 'marketplace_refresh',
   });
 
+  const activeFilterCount = getActiveMarketplaceFilterCount(filters);
+
+  const handleSearchChange = (query: string) => {
+    setSearch(query);
+    if (query) {
+      track(ANALYTICS_EVENTS.SEARCH, { screen: 'marketplace', query });
+    }
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    const q = (query || search).trim();
+    if (!q) return;
+    track(ANALYTICS_EVENTS.SEARCH, { screen: 'marketplace', query: q, action: 'submit' });
+    navigation.navigate('SearchResults', { query: q });
+  };
+
+  const handleSortChange = (option: MarketplaceSortOption) => {
+    setSortBy(option);
+    track(ANALYTICS_EVENTS.SEARCH_FILTER, { screen: 'marketplace', sortBy: option });
+  };
+
+  const handleApplyFilters = (draft: {
+    category?: string;
+    status: typeof filters.status;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => {
+    setCategory(draft.category);
+    setStatus(draft.status);
+    setPriceRange(draft.minPrice, draft.maxPrice);
+    track(ANALYTICS_EVENTS.SEARCH_FILTER, {
+      screen: 'marketplace',
+      categoryId: draft.category,
+      status: draft.status,
+      minPrice: draft.minPrice,
+      maxPrice: draft.maxPrice,
+    });
+    setFilterSheetVisible(false);
+  };
+
+  const handleClearAllFilters = () => {
+    clearAll();
+    track(ANALYTICS_EVENTS.SEARCH_FILTER, { screen: 'marketplace', cleared: true });
+    setFilterSheetVisible(false);
+  };
+
   useEffect(() => {
     trackScreenView('Marketplace');
   }, [trackScreenView]);
 
-  const handleNFTPress = (nft: NFT) => {
+  const handleListingPress = (item: MarketplaceListingCardVM) => {
     track(ANALYTICS_EVENTS.NFT_VIEW, {
-      nftId: nft.id,
-      nftName: nft.name,
-      price: nft.price,
-      currency: nft.currency,
+      nftId: item.nftId,
+      nftName: item.name,
+      source: 'marketplace_grid',
     });
-    navigation.navigate('NFTDetail', { nftId: nft.id });
+    navigation.navigate('NFTDetail', { nftId: item.nftId });
   };
 
-  const renderItem = ({ item }: { item: NFT }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => handleNFTPress(item)}
-    >
-      <OptimizedImage
-        source={item.imageUrl}
-        size="medium"
-        width="100%"
-        height={200}
-        resizeMode="cover"
-        cacheKey={`marketplace-${item.id}`}
-        showSkeleton={true}
-        lazyLoad={true}
-        quality="auto"
-        onLoad={() => {
-          trackPerformance('image_load_time', Date.now(), {
-            nftId: item.id,
-            type: 'marketplace',
-          });
-        }}
-        onError={(err) => {
-          errorLogger.log(err, 'MarketplaceImage', undefined, { nftId: item.id });
-          track(ANALYTICS_EVENTS.ERROR_OCCURRED, {
-            component: 'MarketplaceImage',
-            nftId: item.id,
-            error: err.message,
-          });
-        }}
-      />
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.name || 'Untitled NFT'}</Text>
-        <Text style={styles.cardOwner}>
-          Owner: {item.owner?.username || item.owner?.address || 'Unknown'}
-        </Text>
-      </View>
-    </TouchableOpacity>
+  const renderItem = ({ item }: { item: MarketplaceListingCardVM }) => (
+    <MarketplaceListingCard
+      item={item}
+      onPress={handleListingPress}
+      onImageLoad={(listing) => {
+        trackPerformance('image_load_time', Date.now(), {
+          nftId: listing.nftId,
+          type: 'marketplace',
+        });
+      }}
+      onImageError={(listing, err) => {
+        errorLogger.log(err, 'MarketplaceImage', undefined, { nftId: listing.nftId });
+        track(ANALYTICS_EVENTS.ERROR_OCCURRED, {
+          component: 'MarketplaceImage',
+          nftId: listing.nftId,
+          error: err.message,
+        });
+      }}
+    />
   );
 
   const renderFooter = () => {
-    if (!loading) return null;
+    if (!loading || listings.length === 0) return null;
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.primary} />
@@ -102,26 +160,34 @@ function MarketplaceContent() {
     );
   };
 
-  if (error && nfts.length === 0) {
-    return (
-      <ErrorFallback
-        error={error}
-        onRetry={() => {
-          track('marketplace_refresh');
-          handleRefresh();
-        }}
-        customMessage="Failed to load NFTs. Please check your connection and try again."
-      />
-    );
-  }
+  // A search string or an active filter narrows an otherwise-nonempty
+  // catalog — "no results" reads very differently from "nothing listed
+  // yet" (#472), so the empty state picks copy/variant based on this.
+  const isFiltered = activeFilterCount > 0 || !!search;
 
-  const isRefreshingState = isRefreshing || (loading && nfts.length === 0);
+  const listState = useListState({
+    loading,
+    error,
+    itemCount: listings.length,
+    isFiltered,
+  });
+
+  const renderEmpty = () => (
+    <EmptyState
+      testID="marketplace-empty"
+      variant={isFiltered ? 'filtered' : 'no-data'}
+      title={isFiltered ? t('marketplace.noNFTs') : t('marketplace.emptyNoData')}
+      subtitle={
+        isFiltered ? t('marketplace.noNFTsMessage') : t('marketplace.emptyNoDataMessage')
+      }
+    />
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => {
             track('marketplace_back');
             navigation.goBack();
@@ -129,11 +195,68 @@ function MarketplaceContent() {
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Marketplace</Text>
+        <Text style={styles.title}>{t('marketplace.title')}</Text>
       </View>
-      
-      {isRefreshingState && nfts.length === 0 ? (
-        <MarketplaceCardSkeleton count={3} animated={true} />
+
+      <View style={styles.filters}>
+        <View style={styles.filtersTopRow}>
+          <View style={styles.searchWrapper}>
+            <MarketplaceSearchBar onSearchChange={handleSearchChange} onSubmit={handleSearchSubmit} testID="marketplace-search" />
+            <TouchableOpacity
+              onPress={() => handleSearchSubmit(search)}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+              style={{ marginLeft: 8, padding: 8 }}
+            >
+              <Text style={{ color: '#6C5CE7', fontWeight: '600' }}>Go</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.filterTrigger}
+            onPress={() => {
+              track(ANALYTICS_EVENTS.SEARCH_FILTER, { screen: 'marketplace', action: 'open_sheet' });
+              setFilterSheetVisible(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              activeFilterCount > 0
+                ? `${t('marketplace.filters.trigger')} (${activeFilterCount})`
+                : t('marketplace.filters.trigger')
+            }
+            testID="marketplace-filter-trigger"
+          >
+            <Text style={styles.filterTriggerText}>{t('marketplace.filters.trigger')}</Text>
+            {activeFilterCount > 0 && (
+              <View style={styles.filterBadge} testID="marketplace-filter-badge">
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+        <MarketplaceSortBar selected={filters.sortBy} onSelect={handleSortChange} testID="marketplace-sort" />
+      </View>
+
+      <FilterSheet
+        visible={filterSheetVisible}
+        filters={filters}
+        onApply={handleApplyFilters}
+        onClearAll={handleClearAllFilters}
+        onClose={() => setFilterSheetVisible(false)}
+        testID="marketplace-filter-sheet"
+      />
+
+      {listState === 'error' ? (
+        <ErrorState
+          testID="marketplace-error"
+          title={t('marketplace.loadError')}
+          subtitle={t('marketplace.loadErrorMessage')}
+          onRetry={() => {
+            track('marketplace_refresh');
+            handleRefresh();
+          }}
+        />
+      ) : listState === 'loading' ? (
+        <MarketplaceCardSkeleton count={4} animated variant="grid" />
       ) : (
         <PullToRefresh
           refreshing={isRefreshing}
@@ -148,17 +271,20 @@ function MarketplaceContent() {
           title="Pull to refresh marketplace"
         >
           <FlatList
-            data={nfts}
+            data={listings}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
+            numColumns={GRID_COLUMNS}
+            columnWrapperStyle={styles.row}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             onEndReached={() => {
-              track('marketplace_load_more', { currentCount: nfts.length });
+              track('marketplace_load_more', { currentCount: listings.length });
               loadMore();
             }}
             onEndReachedThreshold={0.5}
             ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmpty}
           />
         </PullToRefresh>
       )}
@@ -203,29 +329,58 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.text,
   },
+  filters: {
+    padding: spacing.md,
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  filtersTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  searchWrapper: {
+    flex: 1,
+  },
+  filterTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceElevated,
+    gap: spacing.xs,
+  },
+  filterTriggerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  filterBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  filterBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   listContent: {
     padding: spacing.md,
     gap: spacing.md,
+    flexGrow: 1,
   },
-  card: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    ...shadows.md,
-    marginBottom: spacing.md,
-  },
-  cardContent: {
-    padding: spacing.md,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  cardOwner: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  row: {
+    gap: spacing.md,
   },
   footerLoader: {
     paddingVertical: spacing.md,

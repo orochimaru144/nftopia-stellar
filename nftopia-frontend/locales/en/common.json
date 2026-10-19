@@ -10,6 +10,20 @@
     "connectWallet": "Connect Wallet",
     "language": "Language"
   },
+  "walletModal": {
+    "title": "Connect Wallet",
+    "subtitle": "Choose a Stellar wallet to connect. Freighter is recommended for browser use.",
+    "scanTitle": "Scan with Mobile Wallet",
+    "scanInstructions": "Open LOBSTR or any WalletConnect-compatible Stellar wallet, scan the QR code, and approve the connection.",
+    "copyPairingCode": "Copy Pairing Code",
+    "copied": "Copied!",
+    "generatingQr": "Generating QR code…",
+    "waitingApproval": "Waiting for wallet approval…",
+    "backToWallets": "Back to wallets",
+    "tryAgain": "Try Again",
+    "connectionFailed": "Connection Failed",
+    "poweredBy": "Secured by Stellar blockchain"
+  },
   "auth": {
     "signIn": "Sign In",
     "signUp": "Sign Up",
@@ -145,6 +159,44 @@
     "report": "Report",
     "block": "Block",
     "unblock": "Unblock"
+  },
+  "report": {
+    "title": "Report content",
+    "action": "Report",
+    "selectReason": "Select a reason",
+    "detailsLabel": "Additional details (optional)",
+    "detailsPlaceholder": "Provide more context about the issue...",
+    "cancel": "Cancel",
+    "submit": "Submit report",
+    "submitting": "Submitting...",
+    "close": "Close",
+    "success": "Report submitted. Thank you for helping keep NFTopia safe.",
+    "successTitle": "Report submitted",
+    "successBody": "Thank you for your report. Our team will review it shortly.",
+    "error": "Failed to submit report. Please try again.",
+    "alreadyReported": "Reported",
+    "reasons": {
+      "spam": {
+        "label": "Spam or misleading content",
+        "description": "Repetitive, irrelevant, or deceptive content."
+      },
+      "copyright": {
+        "label": "Copyright or intellectual property",
+        "description": "Content that infringes on copyright or trademark."
+      },
+      "offensive": {
+        "label": "Offensive content",
+        "description": "Hateful, violent, or otherwise harmful content."
+      },
+      "scam": {
+        "label": "Scam or fraud",
+        "description": "Content involved in fraudulent activities or scams."
+      },
+      "other": {
+        "label": "Other",
+        "description": "Other reasons not listed above."
+      }
+    }
   },
   "notifications": {
     "title": "Notifications",

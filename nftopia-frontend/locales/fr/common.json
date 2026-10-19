@@ -10,6 +10,20 @@
     "connectWallet": "Connecter le portefeuille",
     "language": "Langue"
   },
+  "walletModal": {
+    "title": "Connecter le portefeuille",
+    "subtitle": "Choisissez un portefeuille Stellar. Freighter est recommandé.",
+    "scanTitle": "Scanner avec un portefeuille mobile",
+    "scanInstructions": "Ouvrez LOBSTR ou tout portefeuille Stellar compatible WalletConnect, scannez le code QR et approuvez.",
+    "copyPairingCode": "Copier le code",
+    "copied": "Copié !",
+    "generatingQr": "Génération du code QR…",
+    "waitingApproval": "En attente d'approbation…",
+    "backToWallets": "Retour aux portefeuilles",
+    "tryAgain": "Réessayer",
+    "connectionFailed": "Échec de connexion",
+    "poweredBy": "Sécurisé par la blockchain Stellar"
+  },
   "auth": {
     "signIn": "Se connecter",
     "signUp": "S'inscrire",
@@ -145,6 +159,44 @@
     "report": "Signaler",
     "block": "Bloquer",
     "unblock": "Débloquer"
+  },
+  "report": {
+    "title": "Signaler du contenu",
+    "action": "Signaler",
+    "selectReason": "Sélectionnez un motif",
+    "detailsLabel": "Détails supplémentaires (facultatif)",
+    "detailsPlaceholder": "Fournissez plus de contexte sur le problème...",
+    "cancel": "Annuler",
+    "submit": "Envoyer le signalement",
+    "submitting": "Envoi en cours...",
+    "close": "Fermer",
+    "success": "Signalement envoyé. Merci de contribuer à la sécurité de NFTopia.",
+    "successTitle": "Signalement envoyé",
+    "successBody": "Merci pour votre signalement. Notre équipe l'examinera sous peu.",
+    "error": "Échec de l'envoi du signalement. Veuillez réessayer.",
+    "alreadyReported": "Signalé",
+    "reasons": {
+      "spam": {
+        "label": "Contenu indésirable ou trompeur",
+        "description": "Contenu répétitif, hors sujet ou trompeur."
+      },
+      "copyright": {
+        "label": "Copyright ou propriété intellectuelle",
+        "description": "Contenu violant le droit d'auteur ou une marque déposée."
+      },
+      "offensive": {
+        "label": "Contenu offensant",
+        "description": "Contenu haineux, violent ou autrement nuisible."
+      },
+      "scam": {
+        "label": "Arnaque ou fraude",
+        "description": "Contenu lié à des activités frauduleuses ou à des arnaques."
+      },
+      "other": {
+        "label": "Autre",
+        "description": "Autres motifs non listés ci-dessus."
+      }
+    }
   },
   "notifications": {
     "title": "Notifications",
